@@ -30,7 +30,7 @@ This project is configured to compile seamlessly on both **macOS** (using the na
 
 Clone the repository and build using standard CMake commands:
 ``` bash
-git clone [https://github.com/MwakaMoogle/graphics-journey.git](https://github.com/MwakaMoogle/graphics-journey.git)
+git clone https://github.com/MwakaMoogle/graphics-journey.git
 cd graphics-journey
 mkdir build
 cd build
