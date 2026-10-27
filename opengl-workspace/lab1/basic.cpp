@@ -104,6 +104,9 @@ static void reshape(GLFWwindow* window, int w, int h)
 /* Our own initialisation function */
 void init()
 {
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
 	/* Define animation variables */
 	x = 0;
 	inc = 0.001f;
@@ -182,7 +185,7 @@ void display()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions, GL_DYNAMIC_DRAW);
 
 	/* Define the background colour*/
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	/* Set the current shader program to be used */
