@@ -36,4 +36,4 @@ endif()
 add_library(glad src/glad.c)
 
 # --- Add Sub-Projects ---
-# add_subdirectory(learnopengl)
+add_subdirectory(learnopengl)
