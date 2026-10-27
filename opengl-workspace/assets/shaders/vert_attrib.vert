@@ -1,6 +1,6 @@
 // Vertex shader with vertex colour attribute
 
-#version 420
+#version 330 core
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec4 colour;
 out vec4 fcolour;

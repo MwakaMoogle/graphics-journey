@@ -1,5 +1,5 @@
 // Minimal vertex shader
-#version 420
+#version 330 core
 
 layout(location = 0) in vec4 position;
 
