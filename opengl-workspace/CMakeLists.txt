@@ -33,7 +33,15 @@ elseif (UNIX AND NOT APPLE)
 endif()
 
 # --- Compile Shared Code ---
-add_library(glad src/glad.c)
+# Bundle glad and the uni's wrapper class into one library
+add_library(core_engine src/glad.c src/wrapper_glfw.cpp)
+
+# Ensure the core engine knows where its headers are
+target_include_directories(core_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# Link the core engine to OpenGL and GLFW so the wrapper functions work
+target_link_libraries(core_engine glfw ${OPENGL_LIBRARIES})
 
 # --- Add Sub-Projects ---
-add_subdirectory(learnopengl)
+#add_subdirectory(learnopengl)
+add_subdirectory(lab1)
