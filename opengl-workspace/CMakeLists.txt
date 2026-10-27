@@ -45,3 +45,4 @@ target_link_libraries(core_engine glfw ${OPENGL_LIBRARIES})
 # --- Add Sub-Projects ---
 #add_subdirectory(learnopengl)
 add_subdirectory(lab1)
+add_subdirectory(lab2)
