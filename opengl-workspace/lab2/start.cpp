@@ -10,6 +10,8 @@
 
 /* Link to static libraries, could define these as linker inputs in the project settings instead
 if you prefer */
+#include "glm/ext/quaternion_transform.hpp"
+#include "glm/ext/vector_float3.hpp"
 #ifdef _DEBUG
 #pragma comment(lib, "glfw3D.lib")
 #else
@@ -27,12 +29,18 @@ if you prefer */
 #include "glm/gtc/matrix_transform.hpp"
 #include <glm/gtc/type_ptr.hpp>
 
+#include <stdexcept>
+
 GLuint positionBufferObject, colourObject;
 GLuint program;
 GLuint vao;
 
 /* Position and view globals */
-GLfloat angle_x, angle_x_inc;
+GLfloat angle_x, angle_y, angle_z;
+GLfloat scale_factor = 1.0f;
+GLfloat trans_x = 0.0f, trans_y = 0.0f, trans_z = 0.0f;
+
+glm::vec3 viewPos = glm::vec3(0.0f, 0.0f, 0.5f);
 
 /* Uniforms*/
 GLuint modelID;
@@ -47,7 +55,10 @@ Use it for all your initialisation stuff
 void init(GLWrapper *glw)
 {
 	angle_x = 0;
-	angle_x_inc = 0;
+    angle_y = 0;
+    angle_z = 0;
+
+    glEnable(GL_DEPTH_TEST);
 
 	// Generate index (name) for one vertex array object
 	glGenVertexArrays(1, &vao);
@@ -183,6 +194,45 @@ void init(GLWrapper *glw)
 //You should call glfwSwapBuffers() after all of your rendering to display what you rendered.
 void display()
 {
+
+    GLFWwindow* window =glfwGetCurrentContext();
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        angle_x  -= 0.01f;
+
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        angle_x  += 0.01f;
+
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        angle_y  -= 0.01f;
+
+
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        angle_y  += 0.01f;
+
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        angle_z  -= 0.01f;
+
+
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        angle_z  += 0.01f;
+
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)    trans_y += 0.01f;
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)  trans_y -= 0.01f;
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) trans_x += 0.01f;
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)  trans_x -= 0.01f;
+
+    if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS) scale_factor += 0.01f; // + key
+    if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS) scale_factor -= 0.01f; // - key
+    
+    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) viewPos.z -= 0.01f; // Move camera forward
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) viewPos.z += 0.01f; // Move camera backward
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) viewPos.x -= 0.01f; // Move camera left
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) viewPos.x += 0.01f; // Move camera right
+
+
 	/* Define the background colour */
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -207,20 +257,34 @@ void display()
 	glEnableVertexAttribArray() and glDisableVertexAttribArray() */
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
-	// Model matrix : an identity matrix (model will be at the origin)
 	mat4 model = mat4(1.0f);
+
+    model = translate(model, vec3(trans_x, trans_y, trans_z));
+
 	model = rotate(model, -angle_x, vec3(1, 0, 0)); //rotating in clockwise direction around x-axis
+    model = rotate(model, -angle_y, vec3(0, 1, 0));
+    model = rotate(model, -angle_z, vec3(0, 0, 1));
+
+    model = scale(model, vec3(scale_factor, scale_factor, scale_factor));
 
 	// Send our transformations to the currently bound shader,
-	glUniformMatrix4fv(modelID, 1, GL_FALSE, &model[0][0]);
+    
+    // 1. Create the View matrix
+    mat4 view = lookAt(
+       viewPos,                                // Camera position in world space
+        viewPos + vec3(0.0f, 0.0f, -1.0f),      // Look target (always looking straight ahead)
+        vec3(0.0f, 1.0f, 0.0f)                  // Up vector (Y is up)
+);
+
+    // 2. Combine View and Model (Matrix multiplication is read right-to-left)
+    mat4 modelView = view * model;
+
+    glUniformMatrix4fv(modelID, 1, GL_FALSE, &modelView[0][0]);
 
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	glDisableVertexAttribArray(0);
 	glUseProgram(0);
-
-	/* Modify our animation variables */
-	angle_x += angle_x_inc;
 }
 
 
@@ -238,8 +302,8 @@ static void keyCallback(GLFWwindow* window, int k, int s, int action, int mods)
 	if (k == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 
-	if (k == 'Q') angle_x_inc += 0.001f;
-	if (k == 'W') angle_x_inc -= 0.001f;
+	// if (k == 'Q') angle_x += 0.1f;
+	// if (k == 'W') angle_x -= 0.1f;
 
 }
 
