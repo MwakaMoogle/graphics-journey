@@ -12,6 +12,7 @@
 if you prefer */
 #include "glm/ext/quaternion_transform.hpp"
 #include "glm/ext/vector_float3.hpp"
+#include <cstdio>
 #ifdef _DEBUG
 #pragma comment(lib, "glfw3D.lib")
 #else
@@ -42,8 +43,12 @@ GLfloat trans_x = 0.0f, trans_y = 0.0f, trans_z = 0.0f;
 
 glm::vec3 viewPos = glm::vec3(0.0f, 0.0f, 0.5f);
 
+
+
 /* Uniforms*/
 GLuint modelID;
+GLuint colourModeID;
+GLuint colourMode = 0;
 
 using namespace std;
 using namespace glm;
@@ -188,6 +193,7 @@ void init(GLWrapper *glw)
 
 	/* Define uniforms to send to vertex shader */
 	modelID = glGetUniformLocation(program, "model");
+    colourModeID = glGetUniformLocation(program, "colourMode");
 }
 
 //Called to update the display.
@@ -281,6 +287,8 @@ void display()
 
     glUniformMatrix4fv(modelID, 1, GL_FALSE, &modelView[0][0]);
 
+    glUniform1ui(colourModeID, colourMode);
+
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	glDisableVertexAttribArray(0);
@@ -302,9 +310,8 @@ static void keyCallback(GLFWwindow* window, int k, int s, int action, int mods)
 	if (k == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 
-	// if (k == 'Q') angle_x += 0.1f;
-	// if (k == 'W') angle_x -= 0.1f;
-
+    if (k == GLFW_KEY_C && action == GLFW_PRESS)
+        colourMode = (colourMode == 0) ? 1: 0;
 }
 
 /* An error callback function to output GLFW errors*/
