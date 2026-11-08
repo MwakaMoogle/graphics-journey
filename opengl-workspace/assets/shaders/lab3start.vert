@@ -59,8 +59,20 @@ void main()
     // Calculate the diffuse lighting
     vec4 diffuse_light = diffuse_component * diffuse_colour;
 
-    
+    // Transform the vertex postion into eye space (reletive to the camera)
+    vec4 position_eye = model_view * position_h;
 
+    // Calculate the vector pointing form the vertex to the camera
+    vec3 view_dir = normalize(-position_eye.xyz);
+
+    // Calculate the Reflection Factor
+    vec3 reflect_dir = reflect(-light_dir_normalised, normal_normalised);
+
+    // Calculate the Specular Component
+    float shininess = 32.0;
+    float specular_factor = pow(max(dot(view_dir, reflect_dir), 0.0), shininess);
+    
+    vec4 specular_light = vec4(1.0, 1.0, 1.0, 1.0) * specular_factor;
 
     // Switch between lighting modes
     if (light_mode == 0u) {
@@ -69,8 +81,11 @@ void main()
     else if (light_mode == 1u) {
         fcolour = ambient;
     }
-    else {
+    else if (light_mode == 2u) {
         fcolour = ambient + diffuse_light;
+    }
+    else {
+        fcolour = ambient + diffuse_light + specular_light;
     }
 
     // Define the vertex position

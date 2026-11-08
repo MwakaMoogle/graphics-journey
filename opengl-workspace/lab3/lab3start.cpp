@@ -58,7 +58,7 @@ GLuint colourmodeID;
 GLuint lightDirID;
 GLuint lightModeID; 
 
-GLuint light_mode = 2; // 0 = None, 1 = Ambient Only, 2 = Ambient + Diffuse
+GLuint light_mode = 3; // 0 = None, 1 = Ambient Only, 2 = Ambient + Diffuse
 glm::vec3 light_dir = glm::vec3(0.0f, 0.0f, 1.0f); // Light direction vector starting on the Z axis
 
 GLfloat aspect_ratio;		/* Aspect ratio of the window defined in the reshape callback*/
@@ -250,7 +250,7 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
     if (key == 'L' && action != GLFW_PRESS)
     {
         light_mode++;
-        if (light_mode > 2) light_mode = 0;
+        if (light_mode > 3) light_mode = 0;
     }
 
 	/* Cycle between drawing vertices, mesh and filled polygons */
