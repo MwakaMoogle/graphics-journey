@@ -34,7 +34,14 @@ endif()
 
 # --- Compile Shared Code ---
 # Bundle glad and the uni's wrapper class into one library
-add_library(core_engine src/glad.c src/wrapper_glfw.cpp)
+add_library(core_engine 
+    src/glad.c 
+    src/wrapper_glfw.cpp
+    src/cube.cpp
+    src/sphere.cpp
+    src/cylinder.cpp
+    src/tetrahedron.cpp
+)
 
 # Ensure the core engine knows where its headers are
 target_include_directories(core_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -46,3 +53,4 @@ target_link_libraries(core_engine glfw ${OPENGL_LIBRARIES})
 #add_subdirectory(learnopengl)
 add_subdirectory(lab1)
 add_subdirectory(lab2)
+add_subdirectory(lab3)
