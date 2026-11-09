@@ -13,16 +13,47 @@ layout(location = 2) in vec3 normal;
 uniform mat4 model, view, projection;
 uniform uint colourmode;
 uniform uint light_mode;
-uniform vec3 light_dir;
-uniform vec3 light_colour;
+uniform vec3 light_dir1;
+uniform vec3 light_dir2;
+uniform vec3 light_colour1;
+uniform vec3 light_colour2;
 
 // Output the vertex colour - to be rasterized into pixel fragments
 out vec4 fcolour;
 
 //vec4 ambient = vec4(0.2, 0.2, 0.2, 1.0);
 
+struct Light {
+    vec3 colour;
+    vec3 dir;
+};
+
+// Calculates the diffuse light
+vec4 calculateDiffuseLight(Light light, vec3 normalNormalised, vec4 diffuseColour) {
+    /* Calculate the diffuse componenet
+    Find the angle between the light and the normal using
+    the dot product, 'dot()'. Use 'max' to prevent negative
+    light values on the dark side of the object.
+    */  
+    float diffuseComponent = max(dot(normalNormalised, normalize(light.dir)), 0.0);
+    vec4 diffuseLight = diffuseComponent * diffuseColour * vec4(light.colour, 1.0f);
+    return diffuseLight;
+}
+
+// Calculates the specular light
+vec4 calculateSpecularLight(Light light, vec3 normalNormalised, vec3 viewDir ,float shininess, vec3 colour) {
+    vec3 reflectDir = reflect(-light.dir, normalNormalised);
+    float specularFactor = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    vec4 specularLight = vec4(colour, 1.0f) * specularFactor;
+    return specularLight;
+}
+
 void main()
 {
+    
+    Light light1 = Light(light_colour1, light_dir1);
+    Light light2 = Light(light_colour2, light_dir2);
+    
 	vec4 diffuse_colour;
 	vec4 position_h = vec4(position, 1.0);
 	
@@ -47,36 +78,19 @@ void main()
     vec3 transformed_normal = normal_matrix * normal;
 
     // Normalise the vectors
-    vec3 light_dir_normalised = normalize(light_dir);
     vec3 normal_normalised = normalize(transformed_normal);
-
-    /* Calculate the diffuse componenet
-       Find the angle between the light and the normal using
-       the dot product, 'dot()'. Use 'max' to prevent negative
-       light values on the dark side of the object.
-    */
-    float diffuse_component = max(dot(normal_normalised, light_dir_normalised), 0.0);
-
-    // setting the colour
-    diffuse_colour = vec4((diffuse_colour.xyz * light_colour), 1.0f);
-
-    // Calculate the diffuse lighting
-    vec4 diffuse_light = diffuse_component * diffuse_colour;
 
     // Transform the vertex postion into eye space (reletive to the camera)
     vec4 position_eye = model_view * position_h;
 
     // Calculate the vector pointing form the vertex to the camera
     vec3 view_dir = normalize(-position_eye.xyz);
-
-    // Calculate the Reflection Factor
-    vec3 reflect_dir = reflect(-light_dir_normalised, normal_normalised);
-
-    // Calculate the Specular Component
-    float shininess = 32.0;
-    float specular_factor = pow(max(dot(view_dir, reflect_dir), 0.0), shininess);
     
-    vec4 specular_light = vec4(1.0, 1.0, 1.0, 1.0) * specular_factor;
+    // Diffuse Light
+    vec4 diffuse_light = calculateDiffuseLight(light1, normal_normalised, diffuse_colour) + calculateDiffuseLight(light2, normal_normalised, diffuse_colour);
+
+    // Specular Light
+    vec4 specular_light = calculateSpecularLight(light1, normal_normalised, view_dir, 33.0, vec3(1.0f, 1.0f, 1.0f)) + calculateSpecularLight(light2, normal_normalised, view_dir, 33.0, vec3(1.0f, 1.0f, 1.0f));
 
     // Switch between lighting modes
     if (light_mode == 0u) {

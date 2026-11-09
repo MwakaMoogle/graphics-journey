@@ -12,6 +12,7 @@ Iain Martin October 2018
 
 /* Link to static libraries, could define these as linker inputs in the project settings instead
 if you prefer */
+#include "glm/fwd.hpp"
 #ifdef _DEBUG
 #pragma comment(lib, "glfw3D.lib")
 #else
@@ -46,6 +47,14 @@ GLuint colourmode;	/* Index of a uniform to switch the colour mode in the vertex
 					I've included this to show you how to pass in an unsigned integer into
 					your vertex shader. */
 
+
+// Colours
+glm::vec3 colour_red = glm::vec3(1.0f, 0.0f, 0.0f);
+glm::vec3 colour_green = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 colour_blue = glm::vec3(0.0f, 0.0f, 1.0f);
+glm::vec3 colour_white = glm::vec3(1.0f, 1.0f, 1.0f);
+glm::vec3 colourArray[4] = {colour_white, colour_red, colour_green, colour_blue};
+
 /* Position and view globals */
 GLfloat angle_x, angle_inc_x, x, model_scale, z, y;
 GLfloat angle_y, angle_inc_y, angle_z, angle_inc_z;
@@ -55,13 +64,18 @@ GLuint numlats, numlongs;	//Define the resolution of the sphere object
 /* Uniforms*/
 GLuint modelID, viewID, projectionID;
 GLuint colourmodeID;
-GLuint lightDirID;
+GLuint lightDir1ID;
+GLuint lightDir2ID;
 GLuint lightModeID; 
-GLuint lightColourID;
+GLuint lightColour1ID;
+GLuint lightColour2ID;
 
 GLuint light_mode = 3; // 0 = None, 1 = Ambient Only, 2 = Ambient + Diffuse
-glm::vec3 light_dir = glm::vec3(0.0f, 0.0f, 1.0f); // Light direction vector starting on the Z axis
-glm::vec3 light_colour = glm::vec3(1.0f, 1.0f, 1.0f); // The colour of the light default is white
+int light2Colour = 3; // 0 = white, 1 = red, 2 = green, 3 = blue
+glm::vec3 light_dir1 = glm::vec3(0.0f, 0.0f, 1.0f); // Light direction vector starting on the Z axis
+glm::vec3 light_dir2 = glm::vec3(1.0f, 0.0f, 0.0f); // Light direction vector starting on the X axis
+glm::vec3 light_colour1 = colour_white; // The colour of the light default is white
+glm::vec3 light_colour2 = colour_white;
 
 GLfloat aspect_ratio;		/* Aspect ratio of the window defined in the reshape callback*/
 GLuint numspherevertices;
@@ -115,9 +129,11 @@ void init(GLWrapper *glw)
 	colourmodeID = glGetUniformLocation(program, "colourmode");
 	viewID = glGetUniformLocation(program, "view");
 	projectionID = glGetUniformLocation(program, "projection");
-    lightDirID = glGetUniformLocation(program, "light_dir");
+    lightDir1ID = glGetUniformLocation(program, "light_dir1");
+    lightDir2ID = glGetUniformLocation(program, "light_dir2");
     lightModeID = glGetUniformLocation(program, "light_mode");
-    lightColourID = glGetUniformLocation(program, "light_colour");
+    lightColour1ID = glGetUniformLocation(program, "light_colour");
+    lightColour2ID = glGetUniformLocation(program, "light_colour2");
 
 	/* create our sphere and cube objects */
 	aSphere.makeSphere(numlats, numlongs, vec3(1.f, 0, 0.5f));
@@ -156,8 +172,10 @@ void display()
     glUniform1ui(lightModeID, light_mode);
 	glUniformMatrix4fv(viewID, 1, GL_FALSE, &view[0][0]);
 	glUniformMatrix4fv(projectionID, 1, GL_FALSE, &projection[0][0]);
-    glUniform3fv(lightDirID, 1, &light_dir[0]);
-    glUniform3fv(lightColourID, 1, &light_colour[0]);
+    glUniform3fv(lightDir1ID, 1, &light_dir1[0]);
+    glUniform3fv(lightDir2ID, 1, &light_dir2[0]);
+    glUniform3fv(lightColour1ID, 1, &light_colour1[0]);
+    glUniform3fv(lightColour2ID, 1, &light_colour2[0]);
 
 	// Define our model transformation in a stack and 
 	// push the identity matrix onto the stack
@@ -243,27 +261,35 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
 	if (key == 'N') z += 0.05f;
 
     // Light Controls
-    if (key == GLFW_KEY_UP)     light_dir.y += 0.1f;
-    if (key == GLFW_KEY_DOWN)   light_dir.y -= 0.1f;
-    if (key == GLFW_KEY_RIGHT)   light_dir.x += 0.1f;
-    if (key == GLFW_KEY_LEFT)   light_dir.x -= 0.1f;
+    if (key == GLFW_KEY_UP)     light_dir1.y += 0.1f;
+    if (key == GLFW_KEY_DOWN)   light_dir1.y -= 0.1f;
+    if (key == GLFW_KEY_RIGHT)   light_dir1.x += 0.1f;
+    if (key == GLFW_KEY_LEFT)   light_dir1.x -= 0.1f;
 
     // Light Colour Controls
-    if (key == GLFW_KEY_1)  light_colour.x -= 0.1f;
-    if (key == GLFW_KEY_2)  light_colour.x += 0.1f;
-    if (key == GLFW_KEY_3)  light_colour.y -= 0.1f;
-    if (key == GLFW_KEY_4)  light_colour.y += 0.1f;
-    if (key == GLFW_KEY_5)  light_colour.z -= 0.1f;
-    if (key == GLFW_KEY_6)  light_colour.z += 0.1f;
+    if (key == GLFW_KEY_1)  light_colour1.x -= 0.1f;
+    if (key == GLFW_KEY_2)  light_colour1.x += 0.1f;
+    if (key == GLFW_KEY_3)  light_colour1.y -= 0.1f;
+    if (key == GLFW_KEY_4)  light_colour1.y += 0.1f;
+    if (key == GLFW_KEY_5)  light_colour1.z -= 0.1f;
+    if (key == GLFW_KEY_6)  light_colour1.z += 0.1f;
 
 	if (key == 'M' && action != GLFW_PRESS)	colourmode = !colourmode;
 
-    // Cylcle between 0 (Unlit), 1 (Ambient), and 2 (Full Lighting)
+    // Cycle between 0 (Unlit), 1 (Ambient), and 2 (Full Lighting)
     if (key == 'L' && action != GLFW_PRESS)
     {
         light_mode++;
         if (light_mode > 3) light_mode = 0;
     }
+
+    // Cycle between light2's colours
+    if (key == ']' && action != GLFW_PRESS) {
+        light2Colour ++;
+        light_colour2 = colourArray[light2Colour];
+        if (light2Colour > 3) light2Colour = 0;
+    }
+
 
 	/* Cycle between drawing vertices, mesh and filled polygons */
 	if (key == ',' && action != GLFW_PRESS)
