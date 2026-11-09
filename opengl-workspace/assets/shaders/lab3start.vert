@@ -14,6 +14,7 @@ uniform mat4 model, view, projection;
 uniform uint colourmode;
 uniform uint light_mode;
 uniform vec3 light_dir;
+uniform vec3 light_colour;
 
 // Output the vertex colour - to be rasterized into pixel fragments
 out vec4 fcolour;
@@ -55,6 +56,9 @@ void main()
        light values on the dark side of the object.
     */
     float diffuse_component = max(dot(normal_normalised, light_dir_normalised), 0.0);
+
+    // setting the colour
+    diffuse_colour = vec4((diffuse_colour.xyz * light_colour), 1.0f);
 
     // Calculate the diffuse lighting
     vec4 diffuse_light = diffuse_component * diffuse_colour;

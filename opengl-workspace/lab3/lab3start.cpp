@@ -57,9 +57,11 @@ GLuint modelID, viewID, projectionID;
 GLuint colourmodeID;
 GLuint lightDirID;
 GLuint lightModeID; 
+GLuint lightColourID;
 
 GLuint light_mode = 3; // 0 = None, 1 = Ambient Only, 2 = Ambient + Diffuse
 glm::vec3 light_dir = glm::vec3(0.0f, 0.0f, 1.0f); // Light direction vector starting on the Z axis
+glm::vec3 light_colour = glm::vec3(1.0f, 1.0f, 1.0f); // The colour of the light default is white
 
 GLfloat aspect_ratio;		/* Aspect ratio of the window defined in the reshape callback*/
 GLuint numspherevertices;
@@ -106,7 +108,7 @@ void init(GLWrapper *glw)
 		cout << "Caught exception: " << e.what() << endl;
 		cin.ignore();
 		exit(0);
-	}
+	} 
 
 	/* Define uniforms to send to vertex shader */
 	modelID = glGetUniformLocation(program, "model");
@@ -115,6 +117,7 @@ void init(GLWrapper *glw)
 	projectionID = glGetUniformLocation(program, "projection");
     lightDirID = glGetUniformLocation(program, "light_dir");
     lightModeID = glGetUniformLocation(program, "light_mode");
+    lightColourID = glGetUniformLocation(program, "light_colour");
 
 	/* create our sphere and cube objects */
 	aSphere.makeSphere(numlats, numlongs, vec3(1.f, 0, 0.5f));
@@ -154,6 +157,7 @@ void display()
 	glUniformMatrix4fv(viewID, 1, GL_FALSE, &view[0][0]);
 	glUniformMatrix4fv(projectionID, 1, GL_FALSE, &projection[0][0]);
     glUniform3fv(lightDirID, 1, &light_dir[0]);
+    glUniform3fv(lightColourID, 1, &light_colour[0]);
 
 	// Define our model transformation in a stack and 
 	// push the identity matrix onto the stack
@@ -244,6 +248,14 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
     if (key == GLFW_KEY_RIGHT)   light_dir.x += 0.1f;
     if (key == GLFW_KEY_LEFT)   light_dir.x -= 0.1f;
 
+    // Light Colour Controls
+    if (key == GLFW_KEY_1)  light_colour.x -= 0.1f;
+    if (key == GLFW_KEY_2)  light_colour.x += 0.1f;
+    if (key == GLFW_KEY_3)  light_colour.y -= 0.1f;
+    if (key == GLFW_KEY_4)  light_colour.y += 0.1f;
+    if (key == GLFW_KEY_5)  light_colour.z -= 0.1f;
+    if (key == GLFW_KEY_6)  light_colour.z += 0.1f;
+
 	if (key == 'M' && action != GLFW_PRESS)	colourmode = !colourmode;
 
     // Cylcle between 0 (Unlit), 1 (Ambient), and 2 (Full Lighting)
@@ -270,8 +282,8 @@ int main(int argc, char* argv[])
 
 	// glad: load all OpenGL function pointers
 	// ---------------------------------------
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
+	
 		cout << "Failed to initialize GLAD. Exiting." << endl;
 		return -1;
 	}
