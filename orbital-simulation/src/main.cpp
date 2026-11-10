@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <Shader.hpp>
 
 // Window dimensions
 const unsigned int SCR_WIDTH = 1024;
@@ -21,6 +22,7 @@ int main() {
     }
 
     // Load Shaders
+    // Shader orbitalShader("assets/shaders/orbital.vert", "assets/shaders/orbital.frag");
 
     // Enable Depth Testing
     glEnable(GL_DEPTH_TEST);
@@ -33,6 +35,8 @@ int main() {
         // Clear screen 
         glClearColor(0.05f, 0.05f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // orbitalShader.use();
        
         glfwSwapBuffers(window);
         glfwPollEvents();
