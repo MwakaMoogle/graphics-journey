@@ -49,11 +49,12 @@ GLuint colourmode;	/* Index of a uniform to switch the colour mode in the vertex
 
 
 // Colours
-glm::vec3 colour_red = glm::vec3(1.0f, 0.0f, 0.0f);
-glm::vec3 colour_green = glm::vec3(0.0f, 1.0f, 0.0f);
-glm::vec3 colour_blue = glm::vec3(0.0f, 0.0f, 1.0f);
-glm::vec3 colour_white = glm::vec3(1.0f, 1.0f, 1.0f);
-glm::vec3 colourArray[4] = {colour_white, colour_red, colour_green, colour_blue};
+glm::vec3 red = glm::vec3(1.0f, 0.0f, 0.0f);
+glm::vec3 green = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 blue = glm::vec3(0.0f, 0.0f, 1.0f);
+glm::vec3 white = glm::vec3(1.0f, 1.0f, 1.0f);
+glm::vec3 black = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 colourArray[5] = {white, red, green, blue, black};
 
 /* Position and view globals */
 GLfloat angle_x, angle_inc_x, x, model_scale, z, y;
@@ -73,9 +74,9 @@ GLuint lightColour2ID;
 GLuint light_mode = 3; // 0 = None, 1 = Ambient Only, 2 = Ambient + Diffuse
 int light2Colour = 3; // 0 = white, 1 = red, 2 = green, 3 = blue
 glm::vec3 light_dir1 = glm::vec3(0.0f, 0.0f, 1.0f); // Light direction vector starting on the Z axis
-glm::vec3 light_dir2 = glm::vec3(1.0f, 0.0f, 0.0f); // Light direction vector starting on the X axis
-glm::vec3 light_colour1 = colour_white; // The colour of the light default is white
-glm::vec3 light_colour2 = colour_white;
+glm::vec3 light_dir2 = glm::vec3(1.0f, 0.6f, 0.3f); // Light direction vector starting on the X axis
+glm::vec3 light_colour1 = white; // The colour of the light default is white
+glm::vec3 light_colour2 = white;
 
 GLfloat aspect_ratio;		/* Aspect ratio of the window defined in the reshape callback*/
 GLuint numspherevertices;
@@ -132,7 +133,7 @@ void init(GLWrapper *glw)
     lightDir1ID = glGetUniformLocation(program, "light_dir1");
     lightDir2ID = glGetUniformLocation(program, "light_dir2");
     lightModeID = glGetUniformLocation(program, "light_mode");
-    lightColour1ID = glGetUniformLocation(program, "light_colour");
+    lightColour1ID = glGetUniformLocation(program, "light_colour1");
     lightColour2ID = glGetUniformLocation(program, "light_colour2");
 
 	/* create our sphere and cube objects */
@@ -176,6 +177,7 @@ void display()
     glUniform3fv(lightDir2ID, 1, &light_dir2[0]);
     glUniform3fv(lightColour1ID, 1, &light_colour1[0]);
     glUniform3fv(lightColour2ID, 1, &light_colour2[0]);
+
 
 	// Define our model transformation in a stack and 
 	// push the identity matrix onto the stack
@@ -286,8 +288,8 @@ static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods
     // Cycle between light2's colours
     if (key == ']' && action != GLFW_PRESS) {
         light2Colour ++;
+        if (light2Colour > 4) light2Colour = 0;
         light_colour2 = colourArray[light2Colour];
-        if (light2Colour > 3) light2Colour = 0;
     }
 
 

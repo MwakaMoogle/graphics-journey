@@ -90,7 +90,7 @@ void main()
     vec4 diffuse_light = calculateDiffuseLight(light1, normal_normalised, diffuse_colour) + calculateDiffuseLight(light2, normal_normalised, diffuse_colour);
 
     // Specular Light
-    vec4 specular_light = calculateSpecularLight(light1, normal_normalised, view_dir, 33.0, vec3(1.0f, 1.0f, 1.0f)) + calculateSpecularLight(light2, normal_normalised, view_dir, 33.0, vec3(1.0f, 1.0f, 1.0f));
+    vec4 specular_light = calculateSpecularLight(light1, normal_normalised, view_dir, 8.0, vec3(1.0f, 1.0f, 1.0f)) + calculateSpecularLight(light2, normal_normalised, view_dir, 8.0, vec3(1.0f, 1.0f, 1.0f));
 
     // Switch between lighting modes
     if (light_mode == 0u) {
