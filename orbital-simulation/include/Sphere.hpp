@@ -1,0 +1,19 @@
+#ifndef SPHERE_H
+#define SPHERE_H
+
+class Sphere {
+    public:
+        // Constructor
+        Sphere(unsigned int xSegments, unsigned int ySegments);
+        
+        // Functions 
+        void draw() const;
+
+    private:
+        unsigned int VAO;           // Stores all the attribute settings
+        unsigned int VBO;           // Buffer storing the raw data (postions, colours, normals)
+        unsigned int EBO;           // Buffer storing the indicies (how the verticies connect into triangles)
+        unsigned int indexCount;    // How many triangles points to draw
+};
+
+#endif
