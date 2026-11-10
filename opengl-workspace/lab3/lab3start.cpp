@@ -2,17 +2,20 @@
 Lab3start
 Creates a cube and a sphere
 Includes rotation, scaling, translation, view and perspective transformations,
-and is setup for you to add lighting because the objects have normals and colours defined
-for all vertices.
-Feel free to either use this example as a start to lab3 or extract bits and add to
-an example of your own to practice implementing per-vertex lighting.
-Iain Martin October 2018
+and is setup for you to add lighting because the objects have normals and
+colours defined for all vertices. Feel free to either use this example as a
+start to lab3 or extract bits and add to an example of your own to practice
+implementing per-vertex lighting. Iain Martin October 2018
 */
 
-
-/* Link to static libraries, could define these as linker inputs in the project settings instead
-if you prefer */
+/* Link to static libraries, could define these as linker inputs in the project
+settings instead if you prefer */
+//#include "GLFW/glfw3.h"
+// #include "GLFW/glfw3.h"
+#include "glm/ext/matrix_transform.hpp"
+#include "glm/ext/vector_float3.hpp"
 #include "glm/fwd.hpp"
+#include "glm/geometric.hpp"
 #ifdef _DEBUG
 #pragma comment(lib, "glfw3D.lib")
 #else
@@ -29,24 +32,21 @@ also includes the OpenGL extension initialisation*/
 #include <stack>
 
 /* Include GLM core and matrix extensions*/
-#include <glm/glm.hpp>
 #include "glm/gtc/matrix_transform.hpp"
+#include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-
 // Include headers for our objects
-#include "sphere.h"
 #include "cube.h"
+#include "sphere.h"
 
+GLuint program; /* Identifier for the shader program */
+GLuint vao;     /* Vertex array (Container) object. This is the index of the VAO
+                   that will be the container for our buffer objects */
 
-GLuint program;		/* Identifier for the shader program */
-GLuint vao;			/* Vertex array (Container) object. This is the index of the VAO that will be the container for
-					our buffer objects */
-
-GLuint colourmode;	/* Index of a uniform to switch the colour mode in the vertex shader
-					I've included this to show you how to pass in an unsigned integer into
-					your vertex shader. */
-
+GLuint colourmode; /* Index of a uniform to switch the colour mode in the vertex
+                      shader I've included this to show you how to pass in an
+                      unsigned integer into your vertex shader. */
 
 // Colours
 glm::vec3 red = glm::vec3(1.0f, 0.0f, 0.0f);
@@ -56,29 +56,40 @@ glm::vec3 white = glm::vec3(1.0f, 1.0f, 1.0f);
 glm::vec3 black = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 colourArray[5] = {white, red, green, blue, black};
 
+// Camera varaibles
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 4.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+float cameraYaw = -90.0f;
+float cameraPitch = 0.0f;
+
 /* Position and view globals */
 GLfloat angle_x, angle_inc_x, x, model_scale, z, y;
 GLfloat angle_y, angle_inc_y, angle_z, angle_inc_z;
-GLuint drawmode;			// Defines drawing mode of sphere as points, lines or filled polygons
-GLuint numlats, numlongs;	//Define the resolution of the sphere object
+GLuint drawmode; // Defines drawing mode of sphere as points, lines or filled
+                 // polygons
+GLuint numlats, numlongs; // Define the resolution of the sphere object
 
 /* Uniforms*/
 GLuint modelID, viewID, projectionID;
 GLuint colourmodeID;
 GLuint lightDir1ID;
 GLuint lightDir2ID;
-GLuint lightModeID; 
+GLuint lightModeID;
 GLuint lightColour1ID;
 GLuint lightColour2ID;
 
 GLuint light_mode = 3; // 0 = None, 1 = Ambient Only, 2 = Ambient + Diffuse
-int light2Colour = 3; // 0 = white, 1 = red, 2 = green, 3 = blue
-glm::vec3 light_dir1 = glm::vec3(0.0f, 0.0f, 1.0f); // Light direction vector starting on the Z axis
-glm::vec3 light_dir2 = glm::vec3(1.0f, 0.6f, 0.3f); // Light direction vector starting on the X axis
+int light2Colour = 3;  // 0 = white, 1 = red, 2 = green, 3 = blue
+glm::vec3 light_dir1 = glm::vec3(
+    0.0f, 0.0f, 1.0f); // Light direction vector starting on the Z axis
+glm::vec3 light_dir2 = glm::vec3(
+    1.0f, 0.6f, 0.3f); // Light direction vector starting on the X axis
 glm::vec3 light_colour1 = white; // The colour of the light default is white
 glm::vec3 light_colour2 = white;
 
-GLfloat aspect_ratio;		/* Aspect ratio of the window defined in the reshape callback*/
+GLfloat aspect_ratio; /* Aspect ratio of the window defined in the reshape
+                         callback*/
 GLuint numspherevertices;
 
 /* Global instances of our objects */
@@ -88,246 +99,331 @@ Cube aCube;
 using namespace std;
 using namespace glm;
 
-
 /*
 This function is called before entering the main rendering loop.
 Use it for all your initialisation stuff
 */
-void init(GLWrapper *glw)
-{
-	/* Set the object transformation controls to their initial values */
-	x = 0;
-	y = 0;
-	z = 0;
-	angle_x = angle_y = angle_z = 0;
-	angle_inc_x = angle_inc_y = angle_inc_z = 0;
-	model_scale = 1.f;
-	aspect_ratio = 1024.f / 768.f;	// Initial aspect ratio from window size (variables would be better!)
-	colourmode = 1;		// 0=use colour attrib buffer, 1=colour defined in shaders
-	numlats = 80;		// Number of latitudes in our sphere
-	numlongs = 80;		// Number of longitudes in our sphere
+void init(GLWrapper *glw) {
+  /* Set the object transformation controls to their initial values */
+  x = 0;
+  y = 0;
+  z = 0;
+  angle_x = angle_y = angle_z = 0;
+  angle_inc_x = angle_inc_y = angle_inc_z = 0;
+  model_scale = 1.f;
+  aspect_ratio = 1024.f / 768.f; // Initial aspect ratio from window size
+                                 // (variables would be better!)
+  colourmode = 1; // 0=use colour attrib buffer, 1=colour defined in shaders
+  numlats = 80;   // Number of latitudes in our sphere
+  numlongs = 80;  // Number of longitudes in our sphere
 
-	// Generate index (name) for one vertex array object
-	glGenVertexArrays(1, &vao);
+  // Generate index (name) for one vertex array object
+  glGenVertexArrays(1, &vao);
 
-	// Create the vertex array object and make it current
-	glBindVertexArray(vao);
+  // Create the vertex array object and make it current
+  glBindVertexArray(vao);
 
-	/* Load and build the vertex and fragment shaders */
-	try
-	{
-		program = glw->LoadShader("assets/shaders/lab3start.vert", "assets/shaders/lab3start.frag");
-	}
-	catch (exception &e)
-	{
-		cout << "Caught exception: " << e.what() << endl;
-		cin.ignore();
-		exit(0);
-	} 
+  /* Load and build the vertex and fragment shaders */
+  try {
+    program = glw->LoadShader("assets/shaders/lab3start.vert",
+                              "assets/shaders/lab3start.frag");
+  } catch (exception &e) {
+    cout << "Caught exception: " << e.what() << endl;
+    cin.ignore();
+    exit(0);
+  }
 
-	/* Define uniforms to send to vertex shader */
-	modelID = glGetUniformLocation(program, "model");
-	colourmodeID = glGetUniformLocation(program, "colourmode");
-	viewID = glGetUniformLocation(program, "view");
-	projectionID = glGetUniformLocation(program, "projection");
-    lightDir1ID = glGetUniformLocation(program, "light_dir1");
-    lightDir2ID = glGetUniformLocation(program, "light_dir2");
-    lightModeID = glGetUniformLocation(program, "light_mode");
-    lightColour1ID = glGetUniformLocation(program, "light_colour1");
-    lightColour2ID = glGetUniformLocation(program, "light_colour2");
+  /* Define uniforms to send to vertex shader */
+  modelID = glGetUniformLocation(program, "model");
+  colourmodeID = glGetUniformLocation(program, "colourmode");
+  viewID = glGetUniformLocation(program, "view");
+  projectionID = glGetUniformLocation(program, "projection");
+  lightDir1ID = glGetUniformLocation(program, "light_dir1");
+  lightDir2ID = glGetUniformLocation(program, "light_dir2");
+  lightModeID = glGetUniformLocation(program, "light_mode");
+  lightColour1ID = glGetUniformLocation(program, "light_colour1");
+  lightColour2ID = glGetUniformLocation(program, "light_colour2");
 
-	/* create our sphere and cube objects */
-	aSphere.makeSphere(numlats, numlongs, vec3(1.f, 0, 0.5f));
-	aCube.makeCube();
+  /* create our sphere and cube objects */
+  aSphere.makeSphere(numlats, numlongs, vec3(1.f, 0, 0.5f));
+  aCube.makeCube();
 }
 
-/* Called to update the display. Note that this function is called in the event loop in the wrapper
-class because we registered display as a callback function */
-void display()
-{
-	/* Define the background colour */
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+/* Called to update the display. Note that this function is called in the event
+loop in the wrapper class because we registered display as a callback function
+*/
+void display() {
+    
+  // Get window
+  GLFWwindow* window = glfwGetCurrentContext();
 
-	/* Clear the colour and frame buffers */
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  float cameraSpeed = 0.01f;
 
-	/* Enable depth test  */
-	glEnable(GL_DEPTH_TEST);
+  // Postional Movement
+  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) cameraPos += cameraSpeed * cameraFront;
+  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) cameraPos -= cameraSpeed * cameraFront;
+  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 
-	/* Make the compiled shader program current */
-	glUseProgram(program);
+  // Vertical Movement
+  if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) cameraPos += cameraSpeed * cameraUp;
+  if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) cameraPos -= cameraSpeed * cameraUp;
+    
+  // Look Around
+  float sensitivity = 0.5f;
+  if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) cameraPitch += sensitivity;
+  if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) cameraPitch -= sensitivity;
+  if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) cameraYaw -= sensitivity;
+  if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) cameraYaw += sensitivity;
 
-	// Projection matrix : 30° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-	mat4 projection = perspective(radians(30.0f), aspect_ratio, 0.1f, 100.0f);
+  // Clamp pitch to prevent screen flipping
+  if (cameraPitch > 89.0f) cameraPitch = 89.0f;
+  if (cameraPitch < -89.0f) cameraPitch = -89.0f;
 
-	// Camera matrix
-	mat4 view = lookAt(
-		vec3(0, 0, 4), // Camera is at (0,0,4), in World Space
-		vec3(0, 0, 0), // and looks at the origin
-		vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-	);
+  // Calculate new direction
+  glm::vec3 direction;
+  direction.x = cos(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
+  direction.y = sin(glm::radians(cameraPitch));
+  direction.z = sin(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
+  cameraFront = glm::normalize(direction);
 
-	// Send our projection and view uniforms to the currently bound shader
-	// I do that here because they are the same for all objects
-	glUniform1ui(colourmodeID, colourmode);
-    glUniform1ui(lightModeID, light_mode);
-	glUniformMatrix4fv(viewID, 1, GL_FALSE, &view[0][0]);
-	glUniformMatrix4fv(projectionID, 1, GL_FALSE, &projection[0][0]);
-    glUniform3fv(lightDir1ID, 1, &light_dir1[0]);
-    glUniform3fv(lightDir2ID, 1, &light_dir2[0]);
-    glUniform3fv(lightColour1ID, 1, &light_colour1[0]);
-    glUniform3fv(lightColour2ID, 1, &light_colour2[0]);
+  /* Define the background colour */
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
+  /* Clear the colour and frame buffers */
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Define our model transformation in a stack and 
-	// push the identity matrix onto the stack
-	stack<mat4> model;
-	model.push(mat4(1.0f));
+  /* Enable depth test  */
+  glEnable(GL_DEPTH_TEST);
 
-	// Define our transformations that apply to all our objects 
-	// by modifying the matrix at the top of the stack
-	model.top() = scale(model.top(), vec3(model_scale, model_scale, model_scale));//scale equally in all axis
-	model.top() = rotate(model.top(), -radians(angle_x), vec3(1, 0, 0)); //rotating in clockwise direction around x-axis
-	model.top() = rotate(model.top(), -radians(angle_y), vec3(0, 1, 0)); //rotating in clockwise direction around y-axis
-	model.top() = rotate(model.top(), -radians(angle_z), vec3(0, 0, 1)); //rotating in clockwise direction around z-axis
+  /* Make the compiled shader program current */
+  glUseProgram(program);
 
-	// Push the current value of the top of the matrix onto the stack
-	// I like to add a code block here to emphasise  the section between push and pop
-	// This block of code draws the cube
-	model.push(model.top());
-	{
-		// Define the model transformations for the cube
-		model.top() = translate(model.top(), vec3(x + 0.5f, y, z));
+  // Projection matrix : 30° Field of View, 4:3 ratio, display range : 0.1 unit
+  // <-> 100 units
+  mat4 projection = perspective(radians(30.0f), aspect_ratio, 0.1f, 100.0f);
 
-		// Send the model uniform to the currently bound shader,
-		glUniformMatrix4fv(modelID, 1, GL_FALSE, &(model.top()[0][0]));
-		
-		/* Draw our cube*/
-		aCube.drawCube(drawmode);
-	}
-	model.pop();
+  // Dynamic Camera matrix
+  mat4 view = lookAt(
+          cameraPos,
+          cameraPos + cameraFront,
+          cameraUp
+  );
+      
 
-	// This block of code draws the sphere
-	model.push(model.top());
-	{
-		model.top() = translate(model.top(), vec3(-x -0.5f, 0, 0));
-		model.top() = scale(model.top(), vec3(model_scale / 3.f, model_scale / 3.f, model_scale / 3.f));//scale equally in all axis
+  // Send our projection and view uniforms to the currently bound shader
+  // I do that here because they are the same for all objects
+  glUniform1ui(colourmodeID, colourmode);
+  glUniform1ui(lightModeID, light_mode);
+  glUniformMatrix4fv(viewID, 1, GL_FALSE, &view[0][0]);
+  glUniformMatrix4fv(projectionID, 1, GL_FALSE, &projection[0][0]);
+  glUniform3fv(lightDir1ID, 1, &light_dir1[0]);
+  glUniform3fv(lightDir2ID, 1, &light_dir2[0]);
+  glUniform3fv(lightColour1ID, 1, &light_colour1[0]);
+  glUniform3fv(lightColour2ID, 1, &light_colour2[0]);
 
-		glUniformMatrix4fv(modelID, 1, GL_FALSE, &(model.top()[0][0]));
+  // Define our model transformation in a stack and
+  // push the identity matrix onto the stack
+  stack<mat4> model;
+  model.push(mat4(1.0f));
 
-		/* Draw our sphere */
-		aSphere.drawSphere(drawmode);
-	}
-	model.pop();
+  // Define our transformations that apply to all our objects
+  // by modifying the matrix at the top of the stack
+  model.top() =
+      scale(model.top(), vec3(model_scale, model_scale,
+                              model_scale)); // scale equally in all axis
+  model.top() =
+      rotate(model.top(), -radians(angle_x),
+             vec3(1, 0, 0)); // rotating in clockwise direction around x-axis
+  model.top() =
+      rotate(model.top(), -radians(angle_y),
+             vec3(0, 1, 0)); // rotating in clockwise direction around y-axis
+  model.top() =
+      rotate(model.top(), -radians(angle_z),
+             vec3(0, 0, 1)); // rotating in clockwise direction around z-axis
 
-	glDisableVertexAttribArray(0);
-	glUseProgram(0);
+  // Push the current value of the top of the matrix onto the stack
+  // I like to add a code block here to emphasise  the section between push and
+  // pop This block of code draws the cube
+  model.push(model.top());
+  {
+    // Define the model transformations for the cube
+    model.top() = translate(model.top(), vec3(x + 0.5f, y, z));
 
-	/* Modify our animation variables */
-	angle_x += angle_inc_x;
-	angle_y += angle_inc_y;
-	angle_z += angle_inc_z;
+    // Send the model uniform to the currently bound shader,
+    glUniformMatrix4fv(modelID, 1, GL_FALSE, &(model.top()[0][0]));
+
+    /* Draw our cube*/
+    aCube.drawCube(drawmode);
+  }
+  model.pop();
+
+  // This block of code draws the sphere
+  model.push(model.top());
+  {
+    model.top() = translate(model.top(), vec3(-x - 0.5f, 0, 0));
+    model.top() = scale(model.top(),
+                        vec3(model_scale / 3.f, model_scale / 3.f,
+                             model_scale / 3.f)); // scale equally in all axis
+
+    glUniformMatrix4fv(modelID, 1, GL_FALSE, &(model.top()[0][0]));
+
+    /* Draw our sphere */
+    aSphere.drawSphere(drawmode);
+  }
+  model.pop();
+
+  glDisableVertexAttribArray(0);
+  glUseProgram(0);
+
+  /* Modify our animation variables */
+  angle_x += angle_inc_x;
+  angle_y += angle_inc_y;
+  angle_z += angle_inc_z;
 }
 
-/* Called whenever the window is resized. The new window size is given, in pixels. */
-static void reshape(GLFWwindow* window, int w, int h)
-{
-	glViewport(0, 0, (GLsizei)w, (GLsizei)h);
+/* Called whenever the window is resized. The new window size is given, in
+ * pixels. */
+static void reshape(GLFWwindow *window, int w, int h) {
+  glViewport(0, 0, (GLsizei)w, (GLsizei)h);
 
-	// Store aspect ratio to use for our perspective projection
-	aspect_ratio = float(w) / float(h);
+  // Store aspect ratio to use for our perspective projection
+  aspect_ratio = float(w) / float(h);
 }
 
 /* change view angle, exit upon ESC */
-static void keyCallback(GLFWwindow* window, int key, int s, int action, int mods)
-{
-	/* Enable this call if you want to disable key responses to a held down key*/
-	//if (action != GLFW_PRESS) return;
+static void keyCallback(GLFWwindow *window, int key, int s, int action,
+                        int mods) {
+  /* Enable this call if you want to disable key responses to a held down key*/
+  // if (action != GLFW_PRESS) return;
 
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GL_TRUE);
+  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    glfwSetWindowShouldClose(window, GL_TRUE);
+/*
+  if (key == 'Q')
+    angle_inc_x -= 0.05f;
+  if (key == 'W')
+    angle_inc_x += 0.05f;
+  if (key == 'E')
+    angle_inc_y -= 0.05f;
+  if (key == 'R')
+    angle_inc_y += 0.05f;
+  if (key == 'T')
+    angle_inc_z -= 0.05f;
+  if (key == 'Y')
+    angle_inc_z += 0.05f;
+  if (key == 'A')
+    model_scale -= 0.02f;
+  if (key == 'S')
+    model_scale += 0.02f;
+  if (key == 'Z')
+    x -= 0.05f;
+  if (key == 'X')
+    x += 0.05f;
+  if (key == 'C')
+    y -= 0.05f;
+  if (key == 'V')
+    y += 0.05f;
+  if (key == 'B')
+    z -= 0.05f;
+  if (key == 'N')
+    z += 0.05f;
+*/
 
-	if (key == 'Q') angle_inc_x -= 0.05f;
-	if (key == 'W') angle_inc_x += 0.05f;
-	if (key == 'E') angle_inc_y -= 0.05f;
-	if (key == 'R') angle_inc_y += 0.05f;
-	if (key == 'T') angle_inc_z -= 0.05f;
-	if (key == 'Y') angle_inc_z += 0.05f;
-	if (key == 'A') model_scale -= 0.02f;
-	if (key == 'S') model_scale += 0.02f;
-	if (key == 'Z') x -= 0.05f;
-	if (key == 'X') x += 0.05f;
-	if (key == 'C') y -= 0.05f;
-	if (key == 'V') y += 0.05f;
-	if (key == 'B') z -= 0.05f;
-	if (key == 'N') z += 0.05f;
-
-    // Light Controls
-    if (key == GLFW_KEY_UP)     light_dir1.y += 0.1f;
-    if (key == GLFW_KEY_DOWN)   light_dir1.y -= 0.1f;
-    if (key == GLFW_KEY_RIGHT)   light_dir1.x += 0.1f;
-    if (key == GLFW_KEY_LEFT)   light_dir1.x -= 0.1f;
-
-    // Light Colour Controls
-    if (key == GLFW_KEY_1)  light_colour1.x -= 0.1f;
-    if (key == GLFW_KEY_2)  light_colour1.x += 0.1f;
-    if (key == GLFW_KEY_3)  light_colour1.y -= 0.1f;
-    if (key == GLFW_KEY_4)  light_colour1.y += 0.1f;
-    if (key == GLFW_KEY_5)  light_colour1.z -= 0.1f;
-    if (key == GLFW_KEY_6)  light_colour1.z += 0.1f;
-
-	if (key == 'M' && action != GLFW_PRESS)	colourmode = !colourmode;
-
-    // Cycle between 0 (Unlit), 1 (Ambient), and 2 (Full Lighting)
-    if (key == 'L' && action != GLFW_PRESS)
-    {
-        light_mode++;
-        if (light_mode > 3) light_mode = 0;
+  // Light Controls
+  if (key == GLFW_KEY_UP){
+    glm::mat4 rotMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(5.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    light_dir2 = glm::vec3(rotMatrix * glm::vec4(light_dir2, 0.0f));
+  }
+  if (key == GLFW_KEY_DOWN){ 
+    glm::mat4 rotMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-5.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    light_dir2 = glm::vec3(rotMatrix * glm::vec4(light_dir2, 0.0f));
+  }
+  if (key == GLFW_KEY_RIGHT){ 
+    glm::mat4 rotMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(5.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    light_dir2 = glm::vec3(rotMatrix * glm::vec4(light_dir2, 0.0f));
+  }
+  if (key == GLFW_KEY_LEFT){ 
+    glm::mat4 rotMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-5.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    light_dir2 = glm::vec3(rotMatrix * glm::vec4(light_dir2, 0.0f));
+  }
+  if (key == GLFW_KEY_PAGE_UP){
+    glm::mat4 rotMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(5.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    light_dir2 = glm::vec3(rotMatrix * glm::vec4(light_dir2, 0.0f));
     }
-
-    // Cycle between light2's colours
-    if (key == ']' && action != GLFW_PRESS) {
-        light2Colour ++;
-        if (light2Colour > 4) light2Colour = 0;
-        light_colour2 = colourArray[light2Colour];
-    }
+  if (key == GLFW_KEY_PAGE_DOWN){
+    glm::mat4 rotMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-5.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    light_dir2 = glm::vec3(rotMatrix * glm::vec4(light_dir2, 0.0f));
+  }
 
 
-	/* Cycle between drawing vertices, mesh and filled polygons */
-	if (key == ',' && action != GLFW_PRESS)
-	{
-		drawmode++;
-		if (drawmode > 2) drawmode = 0;
-	}
+  // Light Colour Controls
+  if (key == GLFW_KEY_1)
+    light_colour1.x -= 0.1f;
+  if (key == GLFW_KEY_2)
+    light_colour1.x += 0.1f;
+  if (key == GLFW_KEY_3)
+    light_colour1.y -= 0.1f;
+  if (key == GLFW_KEY_4)
+    light_colour1.y += 0.1f;
+  if (key == GLFW_KEY_5)
+    light_colour1.z -= 0.1f;
+  if (key == GLFW_KEY_6)
+    light_colour1.z += 0.1f;
 
+  light_colour1 = glm::clamp(light_colour1, 0.0f, 1.0f);
+
+  if (key == 'M' && action != GLFW_PRESS)
+    colourmode = !colourmode;
+
+  // Cycle between 0 (Unlit), 1 (Ambient), and 2 (Full Lighting)
+  if (key == '[' && action != GLFW_PRESS) {
+    light_mode++;
+    if (light_mode > 3)
+      light_mode = 0;
+  }
+
+  // Cycle between light2's colours
+  if (key == ']' && action != GLFW_PRESS) {
+    light2Colour++;
+    if (light2Colour > 4)
+      light2Colour = 0;
+    light_colour2 = colourArray[light2Colour];
+  }
+
+  /* Cycle between drawing vertices, mesh and filled polygons */
+  if (key == ',' && action != GLFW_PRESS) {
+    drawmode++;
+    if (drawmode > 2)
+      drawmode = 0;
+  }
 }
 
-
 /* Entry point of program */
-int main(int argc, char* argv[])
-{
-	GLWrapper *glw = new GLWrapper(1024, 768, "Lab3 start example");;
+int main(int argc, char *argv[]) {
+  GLWrapper *glw = new GLWrapper(1024, 768, "Lab3 start example");
+  ;
 
-	// glad: load all OpenGL function pointers
-	// ---------------------------------------
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
-	
-		cout << "Failed to initialize GLAD. Exiting." << endl;
-		return -1;
-	}
+  // glad: load all OpenGL function pointers
+  // ---------------------------------------
+  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 
-	// Register the callback functions
-	glw->setRenderer(display);
-	glw->setKeyCallback(keyCallback);
-	glw->setReshapeCallback(reshape);
-	
-	/* Output the OpenGL vendor and version */
-	glw->DisplayVersion();
+    cout << "Failed to initialize GLAD. Exiting." << endl;
+    return -1;
+  }
 
-	init(glw);
+  // Register the callback functions
+  glw->setRenderer(display);
+  glw->setKeyCallback(keyCallback);
+  glw->setReshapeCallback(reshape);
 
-	glw->eventLoop();
+  /* Output the OpenGL vendor and version */
+  glw->DisplayVersion();
 
-	delete(glw);
-	return 0;
+  init(glw);
+
+  glw->eventLoop();
+
+  delete (glw);
+  return 0;
 }
