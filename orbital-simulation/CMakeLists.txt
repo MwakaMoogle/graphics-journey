@@ -14,6 +14,7 @@ find_package(glfw3 REQUIRED)
 add_executable(orbital_engine 
     src/main.cpp 
     src/glad.c
+    src/Sphere.cpp
 )
 
 # Link the libraries to your executable

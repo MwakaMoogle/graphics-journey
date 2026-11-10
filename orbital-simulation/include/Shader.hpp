@@ -36,7 +36,7 @@ class Shader {
 
                 // Read file buffers into streams
                 vShaderStream << vShaderFile.rdbuf();
-                fShaderStream << fShaderStream.rdbuf();
+                fShaderStream << fShaderFile.rdbuf();
 
                 // Convert stream into string
                 vertexCode = vShaderStream.str();
@@ -59,7 +59,7 @@ class Shader {
             checkCompileErrors(vertex, "VERTEX");
 
             // Fragment Shader
-            fragment = glCreateShader(GL_VERTEX_SHADER);
+            fragment = glCreateShader(GL_FRAGMENT_SHADER);
             glShaderSource(fragment, 1, &fShaderCode, NULL);
             glCompileShader(fragment);
             checkCompileErrors(fragment, "FRAGMENT");

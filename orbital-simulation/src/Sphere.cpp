@@ -50,6 +50,7 @@ Sphere::Sphere(unsigned int xSegments, unsigned int ySegments) {
             verticies.push_back(0.8f);
             verticies.push_back(0.8f);
             verticies.push_back(0.8f);
+            verticies.push_back(0.1F);
 
             // Normal (Location 2) - For a unit sphere at the origin,the postion is the normal
             verticies.push_back(xPos);
