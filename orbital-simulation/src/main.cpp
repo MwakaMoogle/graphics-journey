@@ -5,18 +5,33 @@
 #include <Shader.hpp>
 #include <Sphere.hpp>
 #include <Planet.hpp>
+#include <Camera.hpp>
 
 #include <glm/glm.hpp>
 #include "glm/trigonometric.hpp"
 
 // Window dimensions
-const unsigned int SCR_WIDTH = 1024;
-const unsigned int SRC_HEIGHT = 768;
+unsigned int scr_width = 1024;
+unsigned int scr_height = 768;
+
+// Time and Frames
+float deltaTime = 0.0f; // Time between current and last frame
+float lastFrame = 0.0f; // Time of last frame
+int nbFrames = 0;
+float lastTime = 0.0f;
+
+// Camera
+Camera camera(glm::vec3(0.0f, 0.0f, 8.0f));
+float lastX = scr_width / 2.0f;
+float lastY = scr_height / 2.0f;
+bool firstMouse = true;
 
 // Funciton prototypes
 GLFWwindow* initialiseAPI();
 void processInput(GLFWwindow* window);
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+void displayFPS(GLFWwindow* window, float currentFrame);
+void mouseCallback(GLFWwindow* window, double xPosIn, double yPosIn);
 
 
 // Main funciton
@@ -47,6 +62,14 @@ int main() {
 
     // Render loop
     while (!glfwWindowShouldClose(window)) {
+        // Calculate Delta time 
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        // Display FPS
+        displayFPS(window, currentFrame);
+
         // Input
         processInput(window);
 
@@ -58,9 +81,8 @@ int main() {
         orbitalShader.use();
         
         // Camera/View and Projection Matrices
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SRC_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = glm::mat4(1.0f);
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f));
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)scr_width / (float)scr_height, 0.1f, 100.0f);
+        glm::mat4 view = camera.getViewMatrix();
 
         // Send the View and Projection maticies to the GPU
         orbitalShader.setMat4("projection", projection);
@@ -94,7 +116,7 @@ GLFWwindow* initialiseAPI() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
     // Create the window
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SRC_HEIGHT, "Orbital Simulation", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, "Orbital Simulation", NULL, NULL);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
@@ -102,6 +124,8 @@ GLFWwindow* initialiseAPI() {
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouseCallback);
    
     // Load GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -117,11 +141,56 @@ void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
+
+    // Camera movement
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        camera.ProcessKeyboard(0, deltaTime);
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        camera.ProcessKeyboard(1, deltaTime);
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        camera.ProcessKeyboard(2, deltaTime);
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        camera.ProcessKeyboard(3, deltaTime);
+    }
 }
 
 // Callback for window resising
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
+    scr_width = width;
+    scr_height = height > 0 ? height : 1; // Prevents division by 0, if window is minimised
 }
 
+// Calculate and display FPS
+void displayFPS(GLFWwindow* window, float currentFrame) {
+    nbFrames++;
+    if (currentFrame - lastTime >= 1.0f) {
+        std::string title = "Orbital Simulation - FPS: " + std::to_string(nbFrames);
+        glfwSetWindowTitle(window, title.c_str());
+        nbFrames = 0;
+        lastTime = currentFrame;
+    }
+}
 
+// Feeds the mouse offsets to the camera
+void mouseCallback(GLFWwindow* window, double xPosIn, double yPosIn) {
+    float xPos = static_cast<float>(xPosIn);
+    float yPos = static_cast<float>(yPosIn);
+
+    if (firstMouse) {
+        lastX = xPos;
+        lastY = yPos;
+        firstMouse = false;
+    }
+
+    float xOffset = xPos - lastX;
+    float yOffset = lastY - yPos;
+
+    lastX = xPos;
+    lastY = yPos;
+
+    camera.processMouseMovement(xOffset, yOffset);
+}
