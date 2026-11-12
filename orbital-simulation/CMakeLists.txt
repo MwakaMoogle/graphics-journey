@@ -15,6 +15,7 @@ add_executable(orbital_engine
     src/main.cpp 
     src/glad.c
     src/Sphere.cpp
+    src/Planet.cpp
 )
 
 # Link the libraries to your executable
