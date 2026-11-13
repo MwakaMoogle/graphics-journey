@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -9,8 +10,6 @@
 #include <Light.hpp>
 
 #include <glm/glm.hpp>
-#include "glm/ext/vector_float3.hpp"
-#include "glm/trigonometric.hpp"
 
 // Funciton prototypes
 GLFWwindow* initialiseAPI();
@@ -29,6 +28,7 @@ float deltaTime = 0.0f; // Time between current and last frame
 float lastFrame = 0.0f; // Time of last frame
 int nbFrames = 0;
 float lastTime = 0.0f;
+float simulationSpeed = 1.0f;
 
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 8.0f));
@@ -111,10 +111,11 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Update
-        sunModel.update(deltaTime, glm::vec3(0.0f));
-        sunCorona.update(deltaTime, glm::vec3(0.0f));
-        earth.update(deltaTime, sunModel.transform.position);
-        moon.update(deltaTime, earth.transform.position);
+        float scaledDelta = deltaTime * simulationSpeed;
+        sunModel.update(scaledDelta, glm::vec3(0.0f));
+        sunCorona.update(scaledDelta, glm::vec3(0.0f));
+        earth.update(scaledDelta, sunModel.transform.position);
+        moon.update(scaledDelta, earth.transform.position);
         
         // Camera/View and Projection Matrices
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)scr_width / (float)scr_height, 0.1f, 100.0f);
@@ -163,7 +164,6 @@ int main() {
     // Clean up
     glfwTerminate();
     return 0;
-
 }
 
 // Initialisation window
@@ -179,7 +179,7 @@ GLFWwindow* initialiseAPI() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
     // Create the window
-    GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, "Orbital Simulation", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, "OpenGL Orbital Simulation", NULL, NULL);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
@@ -224,6 +224,18 @@ void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
         camera.ProcessKeyboard(5, deltaTime);
     }   
+
+    // Time Scale Controls
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        simulationSpeed += 1.0f * deltaTime;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        simulationSpeed -= 1.0f * deltaTime;
+        if (simulationSpeed < 0.0f) simulationSpeed = 0.0f; // Stops time from goin backward
+    }
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+        simulationSpeed = 1.0f;
+    }
 }
 
 // Callback for window resising
@@ -237,7 +249,10 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 void displayFPS(GLFWwindow* window, float currentFrame) {
     nbFrames++;
     if (currentFrame - lastTime >= 1.0f) {
-        std::string title = "Orbital Simulation - FPS: " + std::to_string(nbFrames);
+        char speedStr[10];
+        snprintf(speedStr, sizeof(speedStr), "%.1fx", simulationSpeed);
+
+        std::string title = "OpenGL Orbital Simulation - FPS: " + std::to_string(nbFrames) + " | Speed: " + speedStr;
         glfwSetWindowTitle(window, title.c_str());
         nbFrames = 0;
         lastTime = currentFrame;
