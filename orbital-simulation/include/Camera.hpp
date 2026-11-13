@@ -19,11 +19,11 @@ class Camera {
         float pitch;
 
         // Camera options
-        float movementSpeed = 5.0f;
+        float movementSpeed = 8.0f;
         float mouseSensitivity = 0.1f;
 
         // Constuctor 
-        Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 5.0f)): 
+        Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 10.0f)): 
             front(glm::vec3(0.0f, 0.0f, -1.0f)), yaw(-90.0f), pitch(0.0f) {
                 this->position = position;
                 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -40,10 +40,15 @@ class Camera {
         // Processes keyboard input
         void ProcessKeyboard(int direction, float deltaTime) {
             float velocity = movementSpeed * deltaTime;
-            if (direction == 0) position += front * velocity; // Forward
-            if (direction == 1) position -= front * velocity; // Backward
+            
+            glm::vec3 flatFront = glm::normalize(glm::vec3(front.x, 0.0f, front.z));
+
+            if (direction == 0) position += flatFront * velocity; // Forward
+            if (direction == 1) position -= flatFront * velocity; // Backward
             if (direction == 2) position -= right * velocity; // Left
             if (direction == 3) position += right * velocity; // Right
+            if (direction == 4) position += worldUp * velocity; // Up
+            if (direction == 5) position -= worldUp * velocity; // Down
         }
 
         // Proccess mouse movement 

@@ -9,7 +9,16 @@
 #include <Light.hpp>
 
 #include <glm/glm.hpp>
+#include "glm/ext/vector_float3.hpp"
 #include "glm/trigonometric.hpp"
+
+// Funciton prototypes
+GLFWwindow* initialiseAPI();
+void processInput(GLFWwindow* window);
+void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+void displayFPS(GLFWwindow* window, float currentFrame);
+void mouseCallback(GLFWwindow* window, double xPosIn, double yPosIn);
+glm::vec3 normaliseRGB(glm::vec3 rgbValue);
 
 // Window dimensions
 unsigned int scr_width = 1024;
@@ -28,16 +37,11 @@ float lastY = scr_height / 2.0f;
 bool firstMouse = true;
 
 // Colours
-const glm::vec3 earthBlue = glm::vec3(40.0f / 255.0f, 122.0f / 255.0f, 184.0f / 255.0f);
-const glm::vec3 moonGrey = glm::vec3(207.0f / 255.0f, 234.0f / 255.0f, 233.0f / 255.0f);
-
-// Funciton prototypes
-GLFWwindow* initialiseAPI();
-void processInput(GLFWwindow* window);
-void framebufferSizeCallback(GLFWwindow* window, int width, int height);
-void displayFPS(GLFWwindow* window, float currentFrame);
-void mouseCallback(GLFWwindow* window, double xPosIn, double yPosIn);
-
+const glm::vec3 earthBlue = normaliseRGB(glm::vec3(40.0f, 122.0f, 184.0f));
+const glm::vec3 moonGrey = normaliseRGB(glm::vec3(207.0f, 234.0f, 233.0f));
+const glm::vec3 brightSun = normaliseRGB(glm::vec3(254.0f, 211.0f, 60.0f));
+const glm::vec3 starlightBlue = normaliseRGB(glm::vec3(38.0f, 132.0f, 255.0f));
+const glm::vec3 fireryOrange = normaliseRGB(glm::vec3(232.0f, 86.0f, 7.0f));
 
 // Main funciton
 int main() {
@@ -50,6 +54,8 @@ int main() {
     // Load Shaders
     Shader orbitalShader("../assets/shaders/orbital.vert", "../assets/shaders/orbital.frag");
     Shader phongShader("../assets/shaders/phong.vert", "../assets/shaders/phong.frag");
+    Shader starShader("../assets/shaders/star.vert", "../assets/shaders/star.frag");
+    Shader coronaShader("../assets/shaders/corona.vert", "../assets/shaders/corona.frag");
     PointLight sun;
 
     // Create sphere master geometry
@@ -57,23 +63,29 @@ int main() {
 
     // Initialise planet objects
     Planet sunModel(&sphereGeoemtry);
+    Planet sunCorona(&sphereGeoemtry);
     Planet earth(&sphereGeoemtry);
     Planet moon(&sphereGeoemtry);
 
     // Sun config
-    sunModel.colour = glm::vec3(1.0f, 0.9, 0.1f); // Bright yellow/white
+    sunModel.colour = brightSun;
+    sunModel.transform.scale = glm::vec3(2.0f);
+
+    // Corona config
+    sunCorona.colour = fireryOrange;
+    sunCorona.transform.scale = sunModel.transform.scale * 1.25f;
     
     // Earth config
     earth.colour = earthBlue;
     earth.shininess = 64.0f;
     earth.rotationSpeed = 0.5f;
-    earth.orbitalRadius = 6.0f;
+    earth.orbitalRadius = 12.0f;
     earth.orbitalSpeed = 0.8f;
 
     // Moon config
     moon.colour = moonGrey;
     moon.shininess = 4.0f;
-    moon.transform.scale = glm::vec3(0.3f);
+    moon.transform.scale = glm::vec3(0.27f);
     moon.rotationSpeed = 1.0f;
     moon.orbitalRadius = 2.0f;
     moon.orbitalSpeed = 2.5f;
@@ -100,23 +112,21 @@ int main() {
 
         // Update
         sunModel.update(deltaTime, glm::vec3(0.0f));
+        sunCorona.update(deltaTime, glm::vec3(0.0f));
         earth.update(deltaTime, sunModel.transform.position);
         moon.update(deltaTime, earth.transform.position);
-        
-        // Activate shaders
-       
-        phongShader.use();
         
         // Camera/View and Projection Matrices
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)scr_width / (float)scr_height, 0.1f, 100.0f);
         glm::mat4 view = camera.getViewMatrix();
         
         // Draw unlit objects
-        orbitalShader.use(); 
-        orbitalShader.setMat4("projection", projection);
-        orbitalShader.setMat4("view", view);
+        starShader.use(); 
+        starShader.setMat4("projection", projection);
+        starShader.setMat4("view", view);
+        starShader.setVec3("viewPos", camera.position);
 
-        sunModel.draw(orbitalShader);
+        sunModel.draw(starShader);
 
         // Draw lit objects
         phongShader.use();
@@ -130,8 +140,22 @@ int main() {
  
         earth.draw(phongShader);
         moon.draw(phongShader);
-
         
+        // Draw transparent objects
+        glEnable(GL_BLEND);                 // Turn blending on
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+        glDepthMask(GL_FALSE);              // Disable depth writing
+
+        coronaShader.use();
+        coronaShader.setMat4("projection", projection);
+        coronaShader.setMat4("view", view);
+        coronaShader.setVec3("viewPos", camera.position);
+
+        sunCorona.draw(coronaShader);
+
+        glDepthMask(GL_TRUE);               // Re-enable depth writing
+        glDisable(GL_BLEND);                // Turn blending off 
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -194,6 +218,12 @@ void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         camera.ProcessKeyboard(3, deltaTime);
     }
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        camera.ProcessKeyboard(4, deltaTime);
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+        camera.ProcessKeyboard(5, deltaTime);
+    }   
 }
 
 // Callback for window resising
@@ -233,3 +263,11 @@ void mouseCallback(GLFWwindow* window, double xPosIn, double yPosIn) {
 
     camera.processMouseMovement(xOffset, yOffset);
 }
+
+// Normalises RGB values
+glm::vec3 normaliseRGB(glm::vec3 rgbValue) {
+    float nR = rgbValue.x / 255.0f;
+    float nG = rgbValue.y / 255.0f;
+    float nB = rgbValue.b / 255.0f;
+    return glm::vec3(nR, nG, nB);
+};
