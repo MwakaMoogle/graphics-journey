@@ -16,33 +16,44 @@ uniform vec3 objectColour;
 uniform float shininess;
 
 // Light variables
-uniform vec3 lightPos;
-uniform vec3 lightColour;
+struct PointLight {
+    vec3 position;
+    vec3 colour;
+};
 uniform vec3 viewPos;
 
+// Set a maximum limit
+#define MAX_LIGHTS 4
+uniform PointLight lights[MAX_LIGHTS];
+uniform int numLights; // Number of active lights
+
 void main(){
-    // Ambient Lighting
-    float ambientStrength = 0.1;
-    vec3 ambient = ambientStrength * lightColour;
-
-    // Diffuse Lighting
     vec3 norm = normalize(fragNormal);
-    vec3 lightDir = normalize(lightPos - fragPos);
-
-    // Calculate the dot product between the normal and light direction
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * lightColour;
-
-    // Specular light
-    float specularStrength = 0.5;
     vec3 viewDir = normalize(viewPos - fragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
+    float ambientStrength = 0.1;
+    float specularStrength = 0.5;
 
-    // Calculate how closely the reflection alligns with the camera view
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
-    vec3 specular = specularStrength * spec * lightColour;
+    vec3 totalLight = vec3(0.0);
 
+    // Loop through however many lights are currently active
+    for (int i = 0; i < numLights; i++) {
+        // Ambient
+        vec3 ambient = ambientStrength * lights[i].colour;
+
+        // Diffuse
+        vec3 lightDir = normalize(lights[i].position - fragPos);
+        float diff = max(dot(norm, lightDir), 0.0);
+        vec3 diffuse = diff * lights[i].colour;
+
+        // Specular
+        vec3 reflectDir = reflect(-lightDir, norm);
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+        vec3 specular = specularStrength * spec * lights[i].colour;
+
+        // Accumulate
+        totalLight += (ambient + diffuse + specular);
+    }
     // Combine all three components
-    vec3 result = (ambient + diffuse + specular) * objectColour;
+    vec3 result = totalLight * objectColour;
     fragColour = vec4(result, 1.0);
 }

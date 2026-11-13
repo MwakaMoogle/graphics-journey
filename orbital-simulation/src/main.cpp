@@ -7,6 +7,7 @@
  *              rendering pipeline for the orbital simulation
  */
 
+#include <cmath>
 #include <cstdio>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -66,19 +67,28 @@ int main() {
     Shader starShader("../assets/shaders/star.vert", "../assets/shaders/star.frag");
     Shader coronaShader("../assets/shaders/corona.vert", "../assets/shaders/corona.frag");
     PointLight sun;
+    PointLight sun2;
 
     // Create sphere master geometry
     Sphere sphereGeoemtry(64, 64);
 
     // Initialise planet objects
     Planet sunModel(&sphereGeoemtry);
+    Planet sunModel2(&sphereGeoemtry);
     Planet sunCorona(&sphereGeoemtry);
     Planet earth(&sphereGeoemtry);
     Planet moon(&sphereGeoemtry);
 
     // Sun config
-    sunModel.colour = brightSun;
+    sunModel.colour =  brightSun;
     sunModel.transform.scale = glm::vec3(2.0f);
+
+    // Sun2
+    sunModel2.colour = starlightBlue;
+    sunModel2.transform.scale = glm::vec3(1.5f);
+    sunModel2.rotationSpeed = 0.2f;
+    sunModel2.orbitalRadius = 16.0f;
+    sunModel2.orbitalSpeed = 0.3f;
 
     // Corona config
     sunCorona.colour = fireryOrange;
@@ -122,9 +132,15 @@ int main() {
         // Update
         float scaledDelta = deltaTime * simulationSpeed;
         sunModel.update(scaledDelta, glm::vec3(0.0f));
+        sunModel2.update(scaledDelta, sunModel.transform.position);
         sunCorona.update(scaledDelta, glm::vec3(0.0f));
         earth.update(scaledDelta, sunModel.transform.position);
         moon.update(scaledDelta, earth.transform.position);
+
+        sun.position = sunModel.transform.position;
+        sun.colour = sunModel.colour;
+        sun2.position = sunModel2.transform.position;
+        sun2.colour = sunModel2.colour;
         
         // Camera/View and Projection Matrices
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)scr_width / (float)scr_height, 0.1f, 100.0f);
@@ -137,6 +153,7 @@ int main() {
         starShader.setVec3("viewPos", camera.position);
 
         sunModel.draw(starShader);
+        sunModel2.draw(starShader);
 
         // Draw lit objects
         phongShader.use();
@@ -145,8 +162,14 @@ int main() {
 
         // Send light uniforms
         phongShader.setVec3("viewPos", camera.position);
-        phongShader.setVec3("lightPos",sun.position);
-        phongShader.setVec3("lightColour", sun.colour);
+
+        phongShader.setInt("numLights", 2);
+        
+        phongShader.setVec3("lights[0].position", sun.position);
+        phongShader.setVec3("lights[0].colour", sun.colour);
+
+        phongShader.setVec3("lights[1].position", sun2.position);
+        phongShader.setVec3("lights[1].colour", sun2.colour);
  
         earth.draw(phongShader);
         moon.draw(phongShader);
