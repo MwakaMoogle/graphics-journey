@@ -1,3 +1,12 @@
+/*
+ * Module: CS51012 - GPU Programming and real-time rendering
+ * Assignment: Individual Program
+ * File: Shader.hpp 
+ * Description: Utility class to load compile, and link GLSL shader programs
+ *              from disk. Provides abstraction for setting uniform variables
+ *              on the GPU.
+ */
+
 #ifndef SHADER_H
 #define SHADER_H
 

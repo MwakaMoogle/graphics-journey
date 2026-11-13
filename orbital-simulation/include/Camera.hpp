@@ -1,3 +1,11 @@
+/*
+ * Module: CS51012 - GPU Programming and real-time rendering
+ * Assignment: Individual Program
+ * File: Camera.hpp 
+ * Description: Defines a 3D camera with 6 degrees of freedom.Provides
+ *              free movement and generates the View matriz for shaders.
+ */
+
 #ifndef CAMERA_H
 #define CAMERA_H
 
@@ -47,8 +55,8 @@ class Camera {
             if (direction == 1) position -= flatFront * velocity; // Backward
             if (direction == 2) position -= right * velocity; // Left
             if (direction == 3) position += right * velocity; // Right
-            if (direction == 4) position += worldUp * velocity; // Up
-            if (direction == 5) position -= worldUp * velocity; // Down
+            if (direction == 4) position += this->worldUp * velocity; // Up
+            if (direction == 5) position -= this->worldUp * velocity; // Down
         }
 
         // Proccess mouse movement 

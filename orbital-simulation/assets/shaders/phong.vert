@@ -1,3 +1,11 @@
+/*
+ * Module: CS51012 - GPU Programming and real-time rendering
+ * Assignment: Individual Program
+ * File: phong.vert 
+ * Description: Implements the Phong reflection model. Calculates directinoal
+ *              shadows, ambient light, and specular hifhlights for opaque bodies.
+ */
+
 #version 330 core 
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec4 colour;

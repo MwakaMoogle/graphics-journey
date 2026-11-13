@@ -1,3 +1,12 @@
+/*
+ * Module: CS51012 - GPU Programming and real-time rendering
+ * Assignment: Individual Program
+ * File: Light.hpp 
+ * Description: Defines a PointLight struct storing spatial coordinates,
+ *              colou, and intensity multipliers (ambient, diffuse, specular)
+ *              to govern the lighting calculations.
+ */
+
 #ifndef LIGHT_H
 #define LIGHT_H
 

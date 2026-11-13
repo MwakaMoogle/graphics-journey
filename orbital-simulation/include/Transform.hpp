@@ -1,3 +1,12 @@
+/*
+ * Module: CS51012 - GPU Programming and real-time rendering
+ * Assignment: Individual Program
+ * File: Transform.hpp
+ * Description: Defines the spatial state of a 3D object. Manages position,
+ *              rotation, and scale vectors, and calculates the Model matrix
+ *              used to transform local geometry into world space.
+ */
+
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 

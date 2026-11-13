@@ -1,3 +1,12 @@
+/*
+ * Module: CS51012 - GPU Programming and real-time rendering
+ * Assignment: Individual Program
+ * File: main.cpp
+ * Description: Application entry point. Handles GLFW window initialisation,
+ *              input polling, the main render loop, and multipass
+ *              rendering pipeline for the orbital simulation
+ */
+
 #include <cstdio>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>

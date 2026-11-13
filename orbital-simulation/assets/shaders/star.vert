@@ -1,3 +1,12 @@
+/*
+ * Module: CS51012 - GPU Programming and real-time rendering
+ * Assignment: Individual Program
+ * File: star.vert 
+ * Description: Emissive material shader for light sources. Uses a view-angle
+ *              dot product to simulate a bright star core with dark edges,
+ *               without computing directional shadows.
+ */
+
 #version 330 core 
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec4 colour;

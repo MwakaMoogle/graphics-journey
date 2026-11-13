@@ -1,3 +1,10 @@
+/*
+ * Module: CS51012 - GPU Programming and real-time rendering
+ * Assignment: Individual Program
+ * File: phong.frag 
+ * Description: Implements the Phong reflection model. Calculates directinoal
+ *              shadows, ambient light, and specular hifhlights for opaque bodies.
+ */
 #version 330 core
 out vec4 fragColour;
 

@@ -1,3 +1,12 @@
+/*
+ * Module: CS51012 - GPU Programming and real-time rendering
+ * Assignment: Individual Program
+ * File: star.frag 
+ * Description: Emissive material shader for light sources. Uses a view-angle
+ *              dot product to simulate a bright star core with dark edges,
+ *               without computing directional shadows.
+ */
+
 #version 330 core
 out vec4 fragColour;
 

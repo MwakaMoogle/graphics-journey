@@ -1,3 +1,12 @@
+/*
+ * Module: CS51012 - GPU Programming and real-time rendering
+ * Assignment: Individual Program
+ * File: Planet.hpp 
+ * Description: Represents a celestial body in the simulation. Manages
+ *              psatial transformations, trigonometric orbital mechanics,
+ *              material properties (shininess/colour) and draw calls.
+ */
+
 #ifndef PLANET_H
 #define PLANET_H
 

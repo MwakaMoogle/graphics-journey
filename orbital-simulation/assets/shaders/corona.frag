@@ -1,3 +1,10 @@
+/*
+ * Module: CS51012 - GPU Programming and real-time rendering
+ * Assignment: Individual Program
+ * File: corona.frag 
+ * Description: Transparent optical halo shader. Uses an inverted view-angle
+ *              calculation to generate an alpha gradient for additive blending.
+ */
 #version 330 core
 out vec4 fragColour;
 
